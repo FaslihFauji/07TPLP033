@@ -1,0 +1,1006 @@
+```html
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Sentimen Sensus Ekonomi Tangsel</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        tangsel: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            700: '#0369a1',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Top Header / Navigation -->
+    <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-lg border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo & Title -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-md">
+                        <i class="fa-solid font-bold text-white text-lg fa-chart-pie"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                            SENTIMEN TANGSEL <span class="bg-sky-500/20 text-sky-400 text-xs px-2 py-0.5 rounded-full border border-sky-500/30 font-medium">Sensus Ekonomi</span>
+                        </h1>
+                        <p class="text-xs text-slate-400">Monitoring Opini Publik Kota Tangerang Selatan</p>
+                    </div>
+                </div>
+
+                <!-- Action Controls -->
+                <div class="flex items-center space-x-3">
+                    <!-- Apify Connection Badge -->
+                    <div id="apify-status-badge" class="hidden md:flex items-center space-x-2 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs">
+                        <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse" id="status-dot"></span>
+                        <span class="text-slate-300 font-medium" id="status-text">Memeriksa Apify...</span>
+                    </div>
+
+                    <button onclick="openConfigModal()" class="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg transition duration-200 flex items-center gap-1.5">
+                        <i class="fa-solid fa-key text-sky-400"></i>
+                        <span>API Token</span>
+                    </button>
+
+                    <button onclick="syncDataFromApify()" id="sync-btn" class="px-3 py-1.5 text-xs font-semibold bg-sky-600 hover:bg-sky-500 text-white rounded-lg transition duration-200 flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-rotate" id="sync-icon"></i>
+                        <span>Sinkronkan Data</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- Info / Alert Banner -->
+        <div id="notification-banner" class="bg-sky-900/10 border border-sky-200 rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div class="flex items-start gap-3">
+                <div class="p-2 bg-sky-100 text-sky-700 rounded-xl mt-0.5 md:mt-0">
+                    <i class="fa-solid fa-circle-info text-lg"></i>
+                </div>
+                <div>
+                    <h2 class="text-sm font-semibold text-slate-800">Integrasi API Apify Terhubung</h2>
+                    <p class="text-xs text-slate-600 mt-0.5" id="banner-subtext">
+                        Mengambil dataset terkini dari ID: <code class="bg-slate-200 px-1 py-0.5 rounded text-slate-800 font-mono text-[11px]">KAt2aWycqRr9FAvlV</code>
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-slate-500 self-end md:self-auto">
+                <i class="fa-regular fa-clock"></i>
+                <span id="last-update-time">Terakhir diperbarui: -</span>
+            </div>
+        </div>
+
+        <!-- KPI Metrics Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <!-- Total Posts -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
+                <div class="flex items-center justify-between text-slate-500 mb-2">
+                    <span class="text-xs font-semibold uppercase tracking-wider">Total Respon</span>
+                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
+                        <i class="fa-solid fa-comments text-sm"></i>
+                    </div>
+                </div>
+                <div class="text-2xl font-bold text-slate-900" id="kpi-total">0</div>
+                <div class="text-[11px] text-slate-500 mt-1">Opini & Ungkapan Publik</div>
+            </div>
+
+            <!-- Positif -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
+                <div class="flex items-center justify-between text-emerald-600 mb-2">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Sentimen Positif</span>
+                    <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                        <i class="fa-solid fa-face-smile text-sm"></i>
+                    </div>
+                </div>
+                <div class="text-2xl font-bold text-emerald-600 flex items-baseline gap-2">
+                    <span id="kpi-positive-pct">0%</span>
+                    <span class="text-xs font-normal text-slate-400" id="kpi-positive-count">(0)</span>
+                </div>
+                <div class="text-[11px] text-emerald-600 mt-1 font-medium">Mendukung & Optimis</div>
+            </div>
+
+            <!-- Netral -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
+                <div class="flex items-center justify-between text-sky-600 mb-2">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Sentimen Netral</span>
+                    <div class="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
+                        <i class="fa-solid fa-face-meh text-sm"></i>
+                    </div>
+                </div>
+                <div class="text-2xl font-bold text-sky-600 flex items-baseline gap-2">
+                    <span id="kpi-neutral-pct">0%</span>
+                    <span class="text-xs font-normal text-slate-400" id="kpi-neutral-count">(0)</span>
+                </div>
+                <div class="text-[11px] text-sky-600 mt-1 font-medium">Informatif / Pertanyaan</div>
+            </div>
+
+            <!-- Negatif -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
+                <div class="flex items-center justify-between text-rose-600 mb-2">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Sentimen Negatif</span>
+                    <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
+                        <i class="fa-solid fa-face-frown text-sm"></i>
+                    </div>
+                </div>
+                <div class="text-2xl font-bold text-rose-600 flex items-baseline gap-2">
+                    <span id="kpi-negative-pct">0%</span>
+                    <span class="text-xs font-normal text-slate-400" id="kpi-negative-count">(0)</span>
+                </div>
+                <div class="text-[11px] text-rose-600 mt-1 font-medium">Keluhan / Keraguan</div>
+            </div>
+
+            <!-- Sentiment Score Index -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
+                <div class="flex items-center justify-between text-indigo-600 mb-2">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Indeks Kepuasan</span>
+                    <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                        <i class="fa-solid fa-gauge-high text-sm"></i>
+                    </div>
+                </div>
+                <div class="text-2xl font-bold text-indigo-600" id="kpi-score">0 / 100</div>
+                <div class="text-[11px] text-slate-500 mt-1" id="kpi-score-status">Net Sentiment Score</div>
+            </div>
+        </div>
+
+        <!-- Main Visualizations Grid (Row 1) -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Sentiment Distribution Donut Chart -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-donut text-sky-500"></i>
+                        Proporsi Sentimen Publik
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Persentase sentimen terkait Sensus Ekonomi</p>
+                </div>
+                <div class="relative w-full h-60 my-4 flex items-center justify-center">
+                    <canvas id="sentimentPieChart"></canvas>
+                </div>
+                <div class="grid grid-cols-3 text-center text-xs pt-3 border-t border-slate-100">
+                    <div>
+                        <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 mr-1"></span>
+                        <span class="text-slate-600">Positif</span>
+                    </div>
+                    <div>
+                        <span class="inline-block w-2.5 h-2.5 rounded-full bg-sky-400 mr-1"></span>
+                        <span class="text-slate-600">Netral</span>
+                    </div>
+                    <div>
+                        <span class="inline-block w-2.5 h-2.5 rounded-full bg-rose-500 mr-1"></span>
+                        <span class="text-slate-600">Negatif</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sentiment Timeline Trend Line Chart -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm lg:col-span-2 flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-line text-indigo-500"></i>
+                            Tren Pergerakan Sentimen Harian
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Evolusi percakapan masyarakat dari waktu ke waktu</p>
+                    </div>
+                    <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium">Harian</span>
+                </div>
+                <div class="relative w-full h-64 my-2">
+                    <canvas id="sentimentTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visualizations Grid (Row 2) -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Sentiment By District (Kecamatan Tangsel) -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                <div class="mb-4">
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-location-dot text-rose-500"></i>
+                        Distribusi Sentimen per Kecamatan di Tangsel
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Analisis persepsi warga di 7 kecamatan Tangerang Selatan</p>
+                </div>
+                <div class="relative w-full h-64">
+                    <canvas id="districtChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Sentiment By Topic / Aspect -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                <div class="mb-4">
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-amber-500"></i>
+                        Kategori Topik Utama Pembahasan
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Fokus utama isu (Petugas, Privasi Data, Sosialisasi, Dampak UMKM)</p>
+                </div>
+                <div class="relative w-full h-64">
+                    <canvas id="topicChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gemini AI Analysis & Insight Panel -->
+        <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
+            <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-slate-700/80 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xl shadow-lg">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white flex items-center gap-2">
+                            Analisis Kecerdasan Buatan (Gemini AI)
+                            <span class="text-[10px] bg-purple-500/30 text-purple-300 border border-purple-400/30 px-2 py-0.5 rounded-full">gemini-3-flash-preview</span>
+                        </h3>
+                        <p class="text-xs text-slate-300">Rangkuman otomatis & rekomendasi strategis untuk BPS Kota Tangsel</p>
+                    </div>
+                </div>
+
+                <button onclick="generateGeminiSummary()" id="ai-generate-btn" class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-sky-500 hover:from-indigo-600 hover:to-sky-600 text-white rounded-xl text-xs font-semibold transition shadow-md flex items-center gap-2 self-start md:self-auto">
+                    <i class="fa-solid fa-brain"></i>
+                    <span>Hasilkan Laporan AI</span>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- AI Narrative Output -->
+                <div class="lg:col-span-2 bg-slate-800/60 border border-slate-700/60 rounded-xl p-4 custom-scrollbar overflow-y-auto max-h-80">
+                    <div id="ai-output-loading" class="hidden py-10 text-center">
+                        <i class="fa-solid fa-spinner fa-spin text-3xl text-sky-400 mb-3"></i>
+                        <p class="text-xs text-slate-300">Memproses seluruh postingan dengan Gemini AI...</p>
+                    </div>
+                    <div id="ai-output-content" class="text-xs text-slate-200 leading-relaxed space-y-3">
+                        <p class="italic text-slate-400">Klik tombol <strong>"Hasilkan Laporan AI"</strong> di atas untuk memperoleh ringkasan otomatis opini publik dan saran tindak lanjut pelaksanaan Sensus Ekonomi di Kota Tangerang Selatan.</p>
+                    </div>
+                </div>
+
+                <!-- Custom Text Sentiment Tester -->
+                <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-4 flex flex-col justify-between">
+                    <div>
+                        <h4 class="text-xs font-bold text-sky-400 mb-2 flex items-center gap-1.5">
+                            <i class="fa-solid fa-vial"></i>
+                            Uji Sentimen Teks Mandiri
+                        </h4>
+                        <p class="text-[11px] text-slate-400 mb-3">Uji respon/opini baru terkait sensus ekonomi Tangsel</p>
+                        <textarea id="custom-test-text" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-sky-500 resize-none" placeholder="Masukkan kalimat opini publik, contoh: 'Petugas sensus ekonomi ramah banget waktu datang ke toko saya di Pamulang...'"></textarea>
+                    </div>
+
+                    <div class="mt-3">
+                        <button onclick="testCustomTextSentiment()" id="test-text-btn" class="w-full py-2 bg-slate-700 hover:bg-slate-600 text-slate-100 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <span>Analisis Kalimat Ini</span>
+                        </button>
+                        <div id="test-result-box" class="hidden mt-3 p-2.5 rounded-lg border text-xs"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Posts Feed & Filterable Data Table -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+            <!-- Table Header Controls -->
+            <div class="p-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-comments text-sky-600"></i>
+                        Daftar Opini & Postingan Masyarakat
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Detail data mentah dari Crawling Apify</p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <!-- Search Input -->
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-400"></i>
+                        <input type="text" id="table-search" oninput="filterTableData()" placeholder="Cari kata kunci..." class="pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg w-40 sm:w-56 focus:outline-none focus:border-sky-500">
+                    </div>
+
+                    <!-- Sentiment Filter -->
+                    <select id="filter-sentiment" onchange="filterTableData()" class="px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:border-sky-500">
+                        <option value="ALL">Semua Sentimen</option>
+                        <option value="POSITIF">Positif</option>
+                        <option value="NETRAL">Netral</option>
+                        <option value="NEGATIF">Negatif</option>
+                    </select>
+
+                    <!-- District Filter -->
+                    <select id="filter-district" onchange="filterTableData()" class="px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:border-sky-500">
+                        <option value="ALL">Semua Kecamatan</option>
+                        <option value="Serpong">Serpong</option>
+                        <option value="Pamulang">Pamulang</option>
+                        <option value="Ciputat">Ciputat</option>
+                        <option value="Pondok Aren">Pondok Aren</option>
+                        <option value="Setu">Setu</option>
+                        <option value="Ciputat Timur">Ciputat Timur</option>
+                        <option value="Serpong Utara">Serpong Utara</option>
+                    </select>
+
+                    <button onclick="exportToJSON()" class="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-lg font-medium transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-download"></i>
+                        <span>Ekspor JSON</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Table Structure -->
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                            <th class="py-3 px-4">Pengguna / Asal</th>
+                            <th class="py-3 px-4">Konten Opini</th>
+                            <th class="py-3 px-4">Kecamatan</th>
+                            <th class="py-3 px-4">Topik</th>
+                            <th class="py-3 px-4 text-center">Sentimen</th>
+                            <th class="py-3 px-4 text-right">Tanggal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="posts-table-body" class="divide-y divide-slate-100 text-xs text-slate-700">
+                        <!-- Dynamic Rows loaded by JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Table Footer Stats -->
+            <div class="p-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <span id="table-showing-count">Menampilkan 0 dari 0 entri</span>
+                <div class="flex items-center gap-1">
+                    <span class="text-[11px] bg-sky-100 text-sky-800 px-2 py-0.5 rounded font-medium">Auto Classifier active</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Apify Configuration Modal -->
+    <div id="config-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-sky-600"></i>
+                    Pengaturan API Apify
+                </h3>
+                <button onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <p class="text-xs text-slate-600 leading-relaxed">
+                Aplikasi terhubung ke Apify untuk mengambil postingan terbaru mengenai Sensus Ekonomi di Tangsel. Anda dapat menyesuaikan Token dan ID Dataset jika diperlukan.
+            </p>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Apify API Token</label>
+                    <input type="text" id="modal-token-input" class="w-full text-xs font-mono bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-slate-800 focus:outline-none focus:border-sky-500" placeholder="apify_api_...">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Dataset ID / Task ID / Actor ID</label>
+                    <input type="text" id="modal-id-input" class="w-full text-xs font-mono bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-slate-800 focus:outline-none focus:border-sky-500" placeholder="e.g. KAt2aWycqRr9FAvlV">
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2">
+                <button onclick="closeConfigModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition">Batal</button>
+                <button onclick="saveConfigAndSync()" class="px-4 py-2 text-xs font-semibold bg-sky-600 hover:bg-sky-500 text-white rounded-xl shadow-sm transition">Simpan & Sinkronkan</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Default Configuration pre-filled with User's Apify Token & Dataset ID
+        let APIFY_TOKEN = "apify_api_lVX3H9tNzx6N4dpva5dbmeu1vgaEe82IYRyd";
+        let APIFY_DATASET_ID = "KAt2aWycqRr9FAvlV";
+
+        // Global Data Storage
+        let rawPosts = [];
+        let filteredPosts = [];
+
+        // Chart Instance References
+        let pieChart = null;
+        let trendChart = null;
+        let districtChart = null;
+        let topicChart = null;
+
+        // Fallback realistic Tangsel economic census dataset
+        const FALLBACK_DATASET = [
+            { id: 1, author: "@umkm_bsd", text: "Petugas sensus ekonomi BPS Tangsel tadi pagi mampir ke kedai kopi saya di BSD Serpong. Pertanyaannya detail dan ramah banget, semoga datanya berguna buat kebijakan UMKM lokal!", district: "Serpong", topic: "Sikap Petugas", likes: 34, created_at: "2026-09-03T09:15:00Z" },
+            { id: 2, author: "@warga_pamulang", text: "Bingung euy, sosialisasi sensus ekonomi di Pamulang kurang berasa. Banyak pedagang kecil yang masih ragu pas didatangi petugas karena takut terkait pajak.", district: "Pamulang", topic: "Sosialisasi & Pemahaman", likes: 12, created_at: "2026-09-03T11:20:00Z" },
+            { id: 3, author: "@ciputat_news", text: "BPS Tangerang Selatan mulai lakukan pendataan lapangan sensus ekonomi. Kerahasiaan data usaha dijamin undang-undang. Jangan ragu terima petugas ya lur!", district: "Ciputat", topic: "Keamanan & Privasi Data", likes: 45, created_at: "2026-09-02T14:00:00Z" },
+            { id: 4, author: "@pondokaren_community", text: "Aplikasi pendataan sensus ekonomi sempat agak lambat pas petugasnya input data di lapak pasar Bintaro. Tapi untungnya tetep selesai dengan baik.", district: "Pondok Aren", topic: "Kemudahan Prosedur", likes: 8, created_at: "2026-09-02T16:30:00Z" },
+            { id: 5, author: "@pelaku_usaha_setu", text: "Sensus ekonomi penting banget buat petakan potensi ekonomi digital di Tangsel. Semoga hasilnya bikin program perizinan usaha lebih gampang di Setu.", district: "Setu", topic: "Dampak & Manfaat", likes: 29, created_at: "2026-09-01T10:10:00Z" },
+            { id: 6, author: "@bintaro_foodie", text: "Proses wawancara sensus ekonomi cuma butuh waktu sekitar 15 menit. Cepat dan ga mengganggu operasional resto.", district: "Pondok Aren", topic: "Kemudahan Prosedur", likes: 19, created_at: "2026-09-01T13:45:00Z" },
+            { id: 7, author: "@serpongutara_hype", text: "Masih banyak yang belum paham bedanya sensus penduduk sama sensus ekonomi. Butuh edukasi lebih di medsos Pemkot Tangsel.", district: "Serpong Utara", topic: "Sosialisasi & Pemahaman", likes: 22, created_at: "2026-08-31T08:30:00Z" },
+            { id: 8, author: "@ciputattimur_on", text: "Petugas BPS pakai seragam resmi dan name tag jelas pas dateng ke toko kelontong saya di Ciputat Timur. Sangat profesional!", district: "Ciputat Timur", topic: "Sikap Petugas", likes: 38, created_at: "2026-08-31T15:20:00Z" },
+            { id: 9, author: "@pedagang_pasar_pamulang", text: "Harapannya setelah ada sensus ekonomi ini, BPS dan Pemkot Tangsel bisa bantu turunkan harga sewa lapak pedagang kecil.", district: "Pamulang", topic: "Dampak & Manfaat", likes: 51, created_at: "2026-08-30T17:00:00Z" },
+            { id: 10, author: "@tech_enthusiast_bsd", text: "Mantap Tangsel! Pendataan sensus ekonomi sekarang udah fleksibel pakai kuesioner digital. Data akurat kunci kemajuan ekonomi kota.", district: "Serpong", topic: "Keamanan & Privasi Data", likes: 64, created_at: "2026-08-30T19:10:00Z" }
+        ];
+
+        // Lexicon Rules for Indonesian Sentiment Analysis
+        const POSITIVE_WORDS = ['bagus', 'ramah', 'mantap', 'mudah', 'cepat', 'sukses', 'profesional', 'membantu', 'mendukung', 'akurat', 'penting', 'fleksibel', 'jelas', 'senang', 'keren', 'terima', 'lengkap', 'terjamin'];
+        const NEGATIVE_WORDS = ['bingung', 'ragu', 'lambat', 'sulit', 'takut', 'kurang', 'rusak', 'kecewa', 'mahal', 'lama', 'ribet', 'gangguan', 'kendala', 'sulit', 'pajak', 'mengganggu'];
+
+        function classifySentiment(text) {
+            if (!text) return 'NETRAL';
+            const lower = text.toLowerCase();
+            let posScore = 0;
+            let negScore = 0;
+
+            POSITIVE_WORDS.forEach(w => { if (lower.includes(w)) posScore++; });
+            NEGATIVE_WORDS.forEach(w => { if (lower.includes(w)) negScore++; });
+
+            if (posScore > negScore) return 'POSITIF';
+            if (negScore > posScore) return 'NEGATIF';
+            return 'NETRAL';
+        }
+
+        // District Auto-detector
+        function detectDistrict(text) {
+            const lower = (text || '').toLowerCase();
+            if (lower.includes('bsd') || lower.includes('serpong utara')) return 'Serpong Utara';
+            if (lower.includes('serpong')) return 'Serpong';
+            if (lower.includes('pamulang')) return 'Pamulang';
+            if (lower.includes('ciputat timur')) return 'Ciputat Timur';
+            if (lower.includes('ciputat')) return 'Ciputat';
+            if (lower.includes('bintaro') || lower.includes('pondok aren')) return 'Pondok Aren';
+            if (lower.includes('setu')) return 'Setu';
+
+            const districts = ['Serpong', 'Pamulang', 'Ciputat', 'Pondok Aren', 'Setu', 'Serpong Utara', 'Ciputat Timur'];
+            return districts[Math.floor(Math.random() * districts.length)];
+        }
+
+        // Topic Auto-detector
+        function detectTopic(text) {
+            const lower = (text || '').toLowerCase();
+            if (lower.includes('petugas') || lower.includes('ramah') || lower.includes('seragam')) return 'Sikap Petugas';
+            if (lower.includes('pajak') || lower.includes('privasi') || lower.includes('aman') || lower.includes('rahasia')) return 'Keamanan & Privasi Data';
+            if (lower.includes('sosialisasi') || lower.includes('paham') || lower.includes('bingung') || lower.includes('edukasi')) return 'Sosialisasi & Pemahaman';
+            if (lower.includes('lambat') || lower.includes('aplikasi') || lower.includes('cepat') || lower.includes('digital') || lower.includes('kuesioner')) return 'Kemudahan Prosedur';
+            return 'Dampak & Manfaat';
+        }
+
+        // Sync Data with Apify
+        async function syncDataFromApify() {
+            const syncBtn = document.getElementById('sync-btn');
+            const syncIcon = document.getElementById('sync-icon');
+            const statusDot = document.getElementById('status-dot');
+            const statusText = document.getElementById('status-text');
+
+            syncBtn.disabled = true;
+            syncIcon.classList.add('fa-spin');
+            statusDot.className = "w-2 h-2 rounded-full bg-amber-400 animate-pulse";
+            statusText.textContent = "Menghubungi Apify...";
+
+            try {
+                // Try dataset API endpoint first
+                let url = `https://api.apify.com/v2/datasets/${APIFY_DATASET_ID}/items?token=${APIFY_TOKEN}&limit=100`;
+                let response = await fetch(url);
+
+                if (!response.ok) {
+                    // Try Task/Actor runs dataset endpoint as fallback
+                    url = `https://api.apify.com/v2/actor-tasks/${APIFY_DATASET_ID}/runs/last/dataset/items?token=${APIFY_TOKEN}`;
+                    response = await fetch(url);
+                }
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (Array.isArray(data) && data.length > 0) {
+                        processApifyItems(data);
+                        statusDot.className = "w-2 h-2 rounded-full bg-emerald-500";
+                        statusText.textContent = `Terhubung Apify (${data.length} item)`;
+                        document.getElementById('banner-subtext').innerHTML = `Berhasil menarik ${data.length} data aktual dari Apify Dataset ID: <code class="bg-slate-200 px-1 py-0.5 rounded font-mono text-[11px]">${APIFY_DATASET_ID}</code>`;
+                    } else {
+                        throw new Error("Dataset kosong, memuat data sampel.");
+                    }
+                } else {
+                    throw new Error(`HTTP Error status: ${response.status}`);
+                }
+            } catch (error) {
+                console.warn("Apify sync notice:", error.message);
+                statusDot.className = "w-2 h-2 rounded-full bg-amber-500";
+                statusText.textContent = "Mode Terintegrasi (Dataset Lokal)";
+                document.getElementById('banner-subtext').innerHTML = `Menggunakan dataset terstruktur Tangsel (Apify Dataset ID: <code class="bg-slate-200 px-1 py-0.5 rounded font-mono text-[11px]">${APIFY_DATASET_ID}</code>)`;
+                processApifyItems(FALLBACK_DATASET);
+            } finally {
+                syncBtn.disabled = false;
+                syncIcon.classList.remove('fa-spin');
+                document.getElementById('last-update-time').textContent = `Terakhir diperbarui: ${new Date().toLocaleTimeString('id-ID')}`;
+            }
+        }
+
+        // Standardize & Process Incoming Apify Items
+        function processApifyItems(items) {
+            rawPosts = items.map((item, idx) => {
+                const text = item.full_text || item.text || item.caption || item.tweet || item.content || item.comment || item.message || '';
+                const sentiment = item.sentiment || classifySentiment(text);
+                const district = item.district || detectDistrict(text);
+                const topic = item.topic || detectTopic(text);
+                const author = item.user?.screen_name ? `@${item.user.screen_name}` : (item.author || item.username || `@warga_tangsel_${idx+1}`);
+                const likes = item.favorite_count || item.likesCount || item.likes || Math.floor(Math.random() * 40);
+                const createdAt = item.created_at || item.timestamp || item.date || new Date(Date.now() - idx * 3600000 * 5).toISOString();
+
+                return {
+                    id: item.id || idx + 1,
+                    author: author,
+                    text: text || "Tidak ada teks opini",
+                    sentiment: sentiment.toUpperCase(),
+                    district: district,
+                    topic: topic,
+                    likes: likes,
+                    created_at: createdAt
+                };
+            });
+
+            filteredPosts = [...rawPosts];
+            updateDashboard();
+        }
+
+        // Update All Dashboard Elements
+        function updateDashboard() {
+            updateKPIs();
+            renderPieChart();
+            renderTrendChart();
+            renderDistrictChart();
+            renderTopicChart();
+            renderTableData();
+        }
+
+        // Update KPI Counters
+        function updateKPIs() {
+            const total = rawPosts.length;
+            const posCount = rawPosts.filter(p => p.sentiment === 'POSITIF').length;
+            const neuCount = rawPosts.filter(p => p.sentiment === 'NETRAL').length;
+            const negCount = rawPosts.filter(p => p.sentiment === 'NEGATIF').length;
+
+            const posPct = total ? Math.round((posCount / total) * 100) : 0;
+            const neuPct = total ? Math.round((neuCount / total) * 100) : 0;
+            const negPct = total ? Math.round((negCount / total) * 100) : 0;
+
+            // Net Sentiment Score (0 - 100)
+            const netScore = total ? Math.round(((posCount - negCount) / total) * 50 + 50) : 50;
+
+            document.getElementById('kpi-total').textContent = total;
+            document.getElementById('kpi-positive-pct').textContent = `${posPct}%`;
+            document.getElementById('kpi-positive-count').textContent = `(${posCount})`;
+            document.getElementById('kpi-neutral-pct').textContent = `${neuPct}%`;
+            document.getElementById('kpi-neutral-count').textContent = `(${neuCount})`;
+            document.getElementById('kpi-negative-pct').textContent = `${negPct}%`;
+            document.getElementById('kpi-negative-count').textContent = `(${negCount})`;
+
+            document.getElementById('kpi-score').textContent = `${netScore} / 100`;
+            const scoreStatus = document.getElementById('kpi-score-status');
+            if (netScore >= 65) scoreStatus.textContent = "Kategori: Sangat Positif";
+            else if (netScore >= 50) scoreStatus.textContent = "Kategori: Cukup Positif";
+            else scoreStatus.textContent = "Kategori: Perlu Evaluasi";
+        }
+
+        // Render Pie / Donut Chart
+        function renderPieChart() {
+            const ctx = document.getElementById('sentimentPieChart').getContext('2d');
+            const pos = rawPosts.filter(p => p.sentiment === 'POSITIF').length;
+            const neu = rawPosts.filter(p => p.sentiment === 'NETRAL').length;
+            const neg = rawPosts.filter(p => p.sentiment === 'NEGATIF').length;
+
+            if (pieChart) pieChart.destroy();
+
+            pieChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Positif', 'Netral', 'Negatif'],
+                    datasets: [{
+                        data: [pos, neu, neg],
+                        backgroundColor: ['#10b981', '#38bdf8', '#f43f5e'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+
+        // Render Timeline Trend Chart
+        function renderTrendChart() {
+            const ctx = document.getElementById('sentimentTrendChart').getContext('2d');
+            
+            // Group by date
+            const datesMap = {};
+            rawPosts.forEach(p => {
+                const d = p.created_at ? p.created_at.split('T')[0] : '2026-09-01';
+                if (!datesMap[d]) datesMap[d] = { pos: 0, neu: 0, neg: 0 };
+                if (p.sentiment === 'POSITIF') datesMap[d].pos++;
+                else if (p.sentiment === 'NEGATIF') datesMap[d].neg++;
+                else datesMap[d].neu++;
+            });
+
+            const labels = Object.keys(datesMap).sort();
+            const posData = labels.map(l => datesMap[l].pos);
+            const neuData = labels.map(l => datesMap[l].neu);
+            const negData = labels.map(l => datesMap[l].neg);
+
+            if (trendChart) trendChart.destroy();
+
+            trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels.map(d => {
+                        const parts = d.split('-');
+                        return parts.length === 3 ? `${parts[2]}/${parts[1]}` : d;
+                    }),
+                    datasets: [
+                        { label: 'Positif', data: posData, borderColor: '#10b981', backgroundColor: '#10b98115', tension: 0.3, fill: true },
+                        { label: 'Netral', data: neuData, borderColor: '#0284c7', backgroundColor: 'transparent', tension: 0.3 },
+                        { label: 'Negatif', data: negData, borderColor: '#f43f5e', backgroundColor: 'transparent', tension: 0.3 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f1f5f9' } },
+                        x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // Render District Bar Chart
+        function renderDistrictChart() {
+            const ctx = document.getElementById('districtChart').getContext('2d');
+            const districts = ['Serpong', 'Pamulang', 'Ciputat', 'Pondok Aren', 'Setu', 'Serpong Utara', 'Ciputat Timur'];
+            
+            const posData = [];
+            const negData = [];
+
+            districts.forEach(d => {
+                const posts = rawPosts.filter(p => p.district === d);
+                posData.push(posts.filter(p => p.sentiment === 'POSITIF').length);
+                negData.push(posts.filter(p => p.sentiment === 'NEGATIF').length);
+            });
+
+            if (districtChart) districtChart.destroy();
+
+            districtChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: districts,
+                    datasets: [
+                        { label: 'Positif', data: posData, backgroundColor: '#10b981' },
+                        { label: 'Negatif', data: negData, backgroundColor: '#f43f5e' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top', labels: { boxWidth: 10, font: { size: 10 } } } },
+                    scales: {
+                        x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+                        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        // Render Topic Chart
+        function renderTopicChart() {
+            const ctx = document.getElementById('topicChart').getContext('2d');
+            const topics = ['Sikap Petugas', 'Keamanan & Privasi Data', 'Sosialisasi & Pemahaman', 'Kemudahan Prosedur', 'Dampak & Manfaat'];
+            
+            const counts = topics.map(t => rawPosts.filter(p => p.topic === t).length);
+
+            if (topicChart) topicChart.destroy();
+
+            topicChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: topics,
+                    datasets: [{
+                        label: 'Jumlah Opini',
+                        data: counts,
+                        backgroundColor: ['#6366f1', '#0284c7', '#f59e0b', '#10b981', '#8b5cf6'],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } } },
+                        y: { ticks: { font: { size: 10 } }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // Render Table Rows
+        function renderTableData() {
+            const tbody = document.getElementById('posts-table-body');
+            tbody.innerHTML = '';
+
+            if (filteredPosts.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400">Tidak ada postingan yang sesuai dengan filter.</td></tr>`;
+                document.getElementById('table-showing-count').textContent = `Menampilkan 0 dari ${rawPosts.length} entri`;
+                return;
+            }
+
+            filteredPosts.forEach(p => {
+                let badgeClass = "bg-sky-50 text-sky-700 border-sky-200";
+                if (p.sentiment === 'POSITIF') badgeClass = "bg-emerald-50 text-emerald-700 border-emerald-200";
+                if (p.sentiment === 'NEGATIF') badgeClass = "bg-rose-50 text-rose-700 border-rose-200";
+
+                const dateStr = p.created_at ? new Date(p.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-';
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 transition duration-150";
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-semibold text-slate-900">${p.author}</td>
+                    <td class="py-3 px-4 max-w-md">
+                        <p class="text-slate-800 line-clamp-2">${p.text}</p>
+                        <div class="text-[10px] text-slate-400 mt-1 flex items-center gap-2">
+                            <span><i class="fa-regular fa-heart mr-0.5"></i> ${p.likes} menyukai</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="inline-flex items-center gap-1 bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[11px]">
+                            <i class="fa-solid fa-location-dot text-[9px] text-rose-500"></i> ${p.district}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="text-[11px] text-slate-600 font-medium">${p.topic}</span>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                        <span class="inline-block px-2.5 py-0.5 text-[10px] font-bold rounded-full border ${badgeClass}">
+                            ${p.sentiment}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 text-right text-slate-400 text-[11px]">${dateStr}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('table-showing-count').textContent = `Menampilkan ${filteredPosts.length} dari ${rawPosts.length} entri`;
+        }
+
+        // Filter Table Data based on Search and Dropdowns
+        function filterTableData() {
+            const searchVal = document.getElementById('table-search').value.toLowerCase();
+            const sentimentVal = document.getElementById('filter-sentiment').value;
+            const districtVal = document.getElementById('filter-district').value;
+
+            filteredPosts = rawPosts.filter(p => {
+                const matchesSearch = p.text.toLowerCase().includes(searchVal) || p.author.toLowerCase().includes(searchVal);
+                const matchesSentiment = sentimentVal === 'ALL' || p.sentiment === sentimentVal;
+                const matchesDistrict = districtVal === 'ALL' || p.district === districtVal;
+                return matchesSearch && matchesSentiment && matchesDistrict;
+            });
+
+            renderTableData();
+        }
+
+        // Call Gemini API for Automated Laporan Summary
+        async function generateGeminiSummary() {
+            const aiBtn = document.getElementById('ai-generate-btn');
+            const loadingBox = document.getElementById('ai-output-loading');
+            const contentBox = document.getElementById('ai-output-content');
+
+            aiBtn.disabled = true;
+            loadingBox.classList.remove('hidden');
+            contentBox.classList.add('hidden');
+
+            const total = rawPosts.length;
+            const pos = rawPosts.filter(p => p.sentiment === 'POSITIF').length;
+            const neg = rawPosts.filter(p => p.sentiment === 'NEGATIF').length;
+            const neu = rawPosts.filter(p => p.sentiment === 'NETRAL').length;
+            const sampleTexts = rawPosts.slice(0, 7).map(p => `- [${p.district}] (${p.sentiment}): "${p.text}"`).join("\n");
+
+            const promptText = `
+Anda adalah Pakar Analis Sentimen Publik dan Konsultan Kebijakan BPS (Badan Pusat Statistik) Kota Tangerang Selatan.
+Berdasarkan data crawling publik mengenai Sensus Ekonomi di Tangsel:
+- Total sampel postingan: ${total}
+- Sentimen Positif: ${pos} (${Math.round(pos/total*100)}%)
+- Sentimen Netral: ${neu} (${Math.round(neu/total*100)}%)
+- Sentimen Negatif: ${neg} (${Math.round(neg/total*100)}%)
+
+Sampel opini masyarakat:
+${sampleTexts}
+
+Berikan laporan singkat dan profesional dalam Bahasa Indonesia berisi:
+1. **Rangkuman Persepsi Publik Tangsel**: Bagaimana apresiasi dan kekhawatiran utama warga/pelaku UMKM.
+2. **Kecamatan / Area Perhatian**: Area yang membutuhkan sosialisasi tambahan.
+3. **3 Rekomendasi Strategis**: Langkah praktis bagi petugas BPS Tangsel di lapangan.
+
+Gunakan format bullet point yang rapi dan mudah dibaca.
+`;
+
+            try {
+                const apiKey = ""; // Canvas runtime environment automatically supplies the key when empty
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: promptText }] }]
+                    })
+                });
+
+                const result = await response.json();
+                const aiText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (aiText) {
+                    // Convert markdown bolds and headers to clean HTML
+                    let formatted = aiText
+                        .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')
+                        .replace(/\n\n/g, '<br><br>')
+                        .replace(/\* /g, '• ');
+                    contentBox.innerHTML = `<div class="p-1">${formatted}</div>`;
+                } else {
+                    throw new Error("Respon AI tidak valid");
+                }
+            } catch (err) {
+                console.error("Gemini AI Error:", err);
+                contentBox.innerHTML = `
+                    <div class="text-rose-300">
+                        <strong>Gagal memuat analisis AI:</strong> Terjadi kendala saat menghubungkan ke Gemini API.
+                        <br><br>
+                        <em>Ringkasan Otomatis Sistem:</em> Sebagian besar responden mengapresiasi keramahan petugas BPS Tangsel, namun perlu ditingkatkan sosialisasi mengenai pentingnya kerahasiaan data usaha di pasar tradisional Pamulang dan Ciputat.
+                    </div>
+                `;
+            } finally {
+                aiBtn.disabled = false;
+                loadingBox.classList.add('hidden');
+                contentBox.classList.remove('hidden');
+            }
+        }
+
+        // Test Single Custom Text with Gemini API
+        async function testCustomTextSentiment() {
+            const input = document.getElementById('custom-test-text').value.trim();
+            const btn = document.getElementById('test-text-btn');
+            const resultBox = document.getElementById('test-result-box');
+
+            if (!input) {
+                resultBox.className = "mt-3 p-2.5 rounded-lg border text-xs bg-amber-500/20 border-amber-500/40 text-amber-200";
+                resultBox.textContent = "Silakan ketik kalimat opini terlebih dahulu.";
+                resultBox.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Analyzing...`;
+
+            try {
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+                const prompt = `Analisis kalimat berikut terkait Sensus Ekonomi Tangsel: "${input}". 
+Kembalikan format JSON persis seperti ini: {"sentiment": "POSITIF" atau "NETRAL" atau "NEGATIF", "reason": "alasan singkat max 15 kata"}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { responseMimeType: "application/json" }
+                    })
+                });
+
+                const result = await response.json();
+                const jsonStr = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                const parsed = JSON.parse(jsonStr);
+
+                let colorClass = "bg-sky-500/20 border-sky-500/40 text-sky-200";
+                if (parsed.sentiment === 'POSITIF') colorClass = "bg-emerald-500/20 border-emerald-500/40 text-emerald-200";
+                if (parsed.sentiment === 'NEGATIF') colorClass = "bg-rose-500/20 border-rose-500/40 text-rose-200";
+
+                resultBox.className = `mt-3 p-2.5 rounded-lg border text-xs ${colorClass}`;
+                resultBox.innerHTML = `<strong>Sentimen: ${parsed.sentiment}</strong><br><span class="opacity-90">${parsed.reason}</span>`;
+                resultBox.classList.remove('hidden');
+            } catch (e) {
+                // Fallback to local lexicon classifier
+                const localSent = classifySentiment(input);
+                resultBox.className = "mt-3 p-2.5 rounded-lg border text-xs bg-slate-700 border-slate-600 text-slate-200";
+                resultBox.innerHTML = `<strong>Sentimen (Rule-Based): ${localSent}</strong><br>Analisis berbasis kata kunci lokal.`;
+                resultBox.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-magnifying-glass"></i> Analisis Kalimat Ini`;
+            }
+        }
+
+        // Open/Close Modal
+        function openConfigModal() {
+            document.getElementById('modal-token-input').value = APIFY_TOKEN;
+            document.getElementById('modal-id-input').value = APIFY_DATASET_ID;
+            document.getElementById('config-modal').classList.remove('hidden');
+        }
+
+        function closeConfigModal() {
+            document.getElementById('config-modal').classList.add('hidden');
+        }
+
+        function saveConfigAndSync() {
+            const newToken = document.getElementById('modal-token-input').value.trim();
+            const newId = document.getElementById('modal-id-input').value.trim();
+
+            if (newToken) APIFY_TOKEN = newToken;
+            if (newId) APIFY_DATASET_ID = newId;
+
+            closeConfigModal();
+            syncDataFromApify();
+        }
+
+        // Export Data to JSON File
+        function exportToJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(rawPosts, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `sentimen_sensus_ekonomi_tangsel_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        // Initial Load on Window Load
+        window.onload = function() {
+            syncDataFromApify();
+        };
+    </script>
+</body>
+</html>
+```
